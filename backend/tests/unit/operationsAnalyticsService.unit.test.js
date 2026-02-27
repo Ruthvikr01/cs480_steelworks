@@ -76,3 +76,40 @@ test("AC9: repeated calls with same filters return deterministic ordering contra
   // ordering so UI snapshots/reports remain deterministic.
   assert.ok(true);
 });
+
+test("AC5: getProductionIssueSummary forwards undefined filters to repository", async () => {
+  // Arrange: repository records the raw filters argument for delegation checks.
+  const expected = [];
+  const repository = {
+    async findProductionLineIssueSummary(receivedFilters) {
+      assert.equal(receivedFilters, undefined);
+      return expected;
+    },
+  };
+
+  const service = new OperationsAnalyticsService(repository);
+
+  // Act: call service without filters.
+  const actual = await service.getProductionIssueSummary();
+
+  // Assert: return contract is passthrough from repository.
+  assert.deepEqual(actual, expected);
+});
+
+test("AC5: getProductionIssueSummary surfaces repository failures", async () => {
+  // Arrange: repository throws domain/data-access error.
+  const repositoryError = new Error("repository unavailable");
+  const repository = {
+    async findProductionLineIssueSummary() {
+      throw repositoryError;
+    },
+  };
+
+  const service = new OperationsAnalyticsService(repository);
+
+  // Act/Assert: service should not swallow or re-map repository errors in scaffold.
+  await assert.rejects(
+    service.getProductionIssueSummary({ lotId: "LOT-002" }),
+    repositoryError,
+  );
+});
