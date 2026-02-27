@@ -12,11 +12,6 @@ on:
     # - ready_for_review    -> draft PR marked ready
     types: [opened, synchronize, reopened, ready_for_review]
 
-  push:
-    # Also run when pushing directly to main.
-    # This protects main in case someone bypasses PR workflow.
-    branches: [main]
-
 
 # ------------------------------------------------------------
 # Concurrency Control
@@ -34,8 +29,8 @@ permissions:
   contents: read
 
 jobs:
-  backend-quality:
-    name: backend (lint/typecheck/tests)
+  precommit:
+    name: pre-commit (lint-staged/tests)
     runs-on: ubuntu-24.04
 
     steps:
@@ -44,6 +39,8 @@ jobs:
       # ------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # ------------------------------------------------------
       # Step 2: Install Node.js + enable npm cache
@@ -54,34 +51,30 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
 
       # ------------------------------------------------------
-      # Step 3: Install backend dependencies
+      # Step 3: Install dependencies
       # ------------------------------------------------------
-      - name: Install backend dependencies
-        working-directory: backend
+      - name: Install root dependencies
         run: npm ci
 
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
       # ------------------------------------------------------
-      # Step 4: Lint + formatting check
+      # Step 4: Run pre-commit checks
       # ------------------------------------------------------
-      - name: Run lint checks
-        working-directory: backend
+      - name: Run pre-commit checks
         run: |
-          npm exec -- prettier --check .
-          npm exec -- eslint .
+          git fetch --no-tags --depth=1 origin ${{ github.base_ref }}
+          npx lint-staged --diff="origin/${{ github.base_ref }}...HEAD"
+          npm test
 
       # ------------------------------------------------------
-      # Step 5: Type-check
+      # Step 5: Fail if hooks modified files
       # ------------------------------------------------------
-      - name: Typecheck backend
-        working-directory: backend
-        run: npm run typecheck
-
-      # ------------------------------------------------------
-      # Step 6: Run tests
-      # ------------------------------------------------------
-      - name: Run backend tests
-        working-directory: backend
-        run: npm test
+      - name: Ensure no auto-fix changes remain
+        run: git diff --exit-code
