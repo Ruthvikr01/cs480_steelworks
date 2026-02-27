@@ -1,0 +1,87 @@
+name: CI
+
+# ------------------------------------------------------------
+# WHEN does this workflow run?
+# ------------------------------------------------------------
+on:
+  pull_request:
+    # These PR events trigger CI:
+    # - opened              -> new PR created
+    # - synchronize         -> new commits pushed to PR branch
+    # - reopened            -> closed PR reopened
+    # - ready_for_review    -> draft PR marked ready
+    types: [opened, synchronize, reopened, ready_for_review]
+
+  push:
+    # Also run when pushing directly to main.
+    # This protects main in case someone bypasses PR workflow.
+    branches: [main]
+
+
+# ------------------------------------------------------------
+# Concurrency Control
+# ------------------------------------------------------------
+# Cancel older in-flight runs and keep only the latest run per branch/PR.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
+# ------------------------------------------------------------
+# Security: Least Privilege
+# ------------------------------------------------------------
+permissions:
+  contents: read
+
+jobs:
+  backend-quality:
+    name: backend (lint/typecheck/tests)
+    runs-on: ubuntu-24.04
+
+    steps:
+      # ------------------------------------------------------
+      # Step 1: Download the repository
+      # ------------------------------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # Step 2: Install Node.js + enable npm cache
+      # ------------------------------------------------------
+      - name: Set up Node.js
+        id: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # ------------------------------------------------------
+      # Step 3: Install backend dependencies
+      # ------------------------------------------------------
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      # ------------------------------------------------------
+      # Step 4: Lint + formatting check
+      # ------------------------------------------------------
+      - name: Run lint checks
+        working-directory: backend
+        run: |
+          npm exec -- prettier --check .
+          npm exec -- eslint .
+
+      # ------------------------------------------------------
+      # Step 5: Type-check
+      # ------------------------------------------------------
+      - name: Typecheck backend
+        working-directory: backend
+        run: npm run typecheck
+
+      # ------------------------------------------------------
+      # Step 6: Run tests
+      # ------------------------------------------------------
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test
