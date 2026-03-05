@@ -1,0 +1,103 @@
+/*
+  Module: styles.css
+  Responsibility: Lightweight dashboard styling.
+  Note: Styling is intentionally simple and readable for onboarding.
+*/
+
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f7fb;
+  color: #1b1f2a;
+}
+
+.container {
+  margin: 0 auto;
+  max-width: 1400px;
+  padding: 1rem;
+}
+
+.container.error {
+  color: #8b0000;
+  font-weight: bold;
+}
+
+header {
+  margin-bottom: 1rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.filters input {
+  min-width: 170px;
+  padding: 0.3rem 0.4rem;
+}
+
+.filters button {
+  padding: 0.4rem 0.6rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.table-section {
+  background: #ffffff;
+  border: 1px solid #d9dfe8;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.table-section h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border: 1px solid #e2e7ef;
+  padding: 0.4rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #eef3fb;
+}
+
+.empty-message {
+  color: #667085;
+}
