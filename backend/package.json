@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --env-file=../.env.test --test",
+    "test": "node --test",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check": "prettier --write . && eslint . --fix",
     "check:licenses": "license-checker --production --failOn \"GPL;AGPL;LGPL\" || exit 1",

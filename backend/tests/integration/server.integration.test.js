@@ -6,6 +6,13 @@ let baseUrl;
 
 test.before(async () => {
   process.env.NODE_ENV = "test";
+  process.env.DATABASE_URL ??=
+    "postgresql://devuser:devpass@localhost:5432/testdb";
+  process.env.DB_HOST ??= "localhost";
+  process.env.DB_PORT ??= "5432";
+  process.env.DB_NAME ??= "testdb";
+  process.env.DB_USER ??= "devuser";
+  process.env.DB_PASSWORD ??= "devpass";
 
   const { startServer } = await import("../../src/server.js");
   server = await startServer(0);
