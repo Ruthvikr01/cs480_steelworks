@@ -1,10 +1,17 @@
 {
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7"
+    "lint-staged": "^16.2.7",
+    "supertest": "^7.2.2"
   },
   "scripts": {
     "prepare": "husky",
-    "test": "npm --prefix backend test"
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend run start",
+    "test": "npm --prefix backend test",
+    "test:e2e": "docker compose up -d backend db && playwright test",
+    "test:all": "npm run test && npm run test:e2e"
   }
 }

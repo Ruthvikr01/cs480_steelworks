@@ -1,16 +1,20 @@
 # markdown_demo
 
-Dockerized scaffold project for Operations Analytics.
+Operations Analytics project with:
 
-## Run with Docker
+- `backend/` (Node.js + Express + PostgreSQL)
+- `frontend/` (React + Vite dashboard)
+- Playwright browser E2E tests
 
-Build and start services:
+## Start with Docker
+
+Build and start database + backend:
 
 ```bash
 docker compose up --build -d
 ```
 
-Stop services:
+Stop all containers:
 
 ```bash
 docker compose down
@@ -18,24 +22,58 @@ docker compose down
 
 ## Services
 
-- Backend: http://localhost:4000
-- Backend health check: http://localhost:4000/health
+- Frontend (Vite dev server): http://localhost:5173
+- Backend API: http://localhost:4000
+- Backend health: http://localhost:4000/health
 - PostgreSQL: localhost:5432
 
-## Run tests (Docker)
+## Local Development
 
-Run all backend tests:
-
-```bash
-docker compose exec backend npm test
-```
-
-Run one test file:
+Install dependencies (root + backend + frontend):
 
 ```bash
-docker compose exec backend node --test tests/unit/operationsAnalyticsService.unit.test.js
+npm install
+npm --prefix backend install
+npm --prefix frontend install
 ```
 
-## Notes
+Run frontend locally:
 
-- This repository is scaffold-first: many tests are `test.todo` and one AC5 unit test intentionally fails for TDD until service logic is implemented.
+```bash
+npm run dev:frontend
+```
+
+Run backend locally:
+
+```bash
+npm run start:backend
+```
+
+## Tests
+
+Run backend unit + integration tests:
+
+```bash
+npm test
+```
+
+Run Playwright browser E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+Run full suite (backend + E2E):
+
+```bash
+npm run test:all
+```
+
+## Environment Files
+
+Root-level environment files are used:
+
+- `.env` for default/runtime values
+- `.env.test` for test-specific values
+
+Current backend tests use `.env.test`.
