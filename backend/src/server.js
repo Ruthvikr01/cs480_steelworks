@@ -2,6 +2,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import * as Sentry from "@sentry/node";
 import { createApp } from "./app.js";
 import { getLogger, initLogger } from "./logging/logger.js";
 
@@ -17,6 +18,12 @@ const envFilePath = path.join(
 
 dotenv.config({
   path: envFilePath,
+});
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 0.0,
+  sendDefaultPii: false,
 });
 
 initLogger();
