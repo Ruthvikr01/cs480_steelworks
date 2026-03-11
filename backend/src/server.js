@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { createApp } from "./app.js";
+import { getLogger, initLogger } from "./logging/logger.js";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -18,6 +19,9 @@ dotenv.config({
   path: envFilePath,
 });
 
+initLogger();
+const logger = getLogger("server");
+
 const PORT = Number(process.env.PORT ?? 4000);
 
 export function createServer() {
@@ -27,14 +31,19 @@ export function createServer() {
 
 export function startServer(port = PORT) {
   const server = createServer();
+  logger.info("Application startup initiated", {
+    port,
+    environment: process.env.NODE_ENV ?? "development",
+  });
+
   return new Promise((resolve) => {
     server.listen(port, () => {
       const address = server.address();
       const activePort =
         typeof address === "object" && address ? address.port : port;
-      console.log(
-        `Backend scaffold listening on http://localhost:${activePort}`,
-      );
+      logger.info("Application startup completed", {
+        listen_url: `http://localhost:${activePort}`,
+      });
       resolve(server);
     });
   });

@@ -18,6 +18,10 @@ import {
   findTopLotsByDefects,
 } from "../repositories/reportRepository.js";
 import { createHttpError } from "../utils/httpError.js";
+import { getLogger } from "../logging/logger.js";
+
+const logger = getLogger("services/reportService");
+const LARGE_RESULT_THRESHOLD = 1000;
 
 /**
  * Validates and normalizes lifecycle filters.
@@ -77,6 +81,7 @@ export function validateLifecycleFilters(filters = {}) {
  * Space Complexity: O(k) delegated to repository/database result size.
  */
 export async function getLotProductionSummary() {
+  logger.info("Querying production records");
   return findLotProductionSummary();
 }
 
@@ -86,6 +91,7 @@ export async function getLotProductionSummary() {
  * @returns {Promise<object[]>}
  */
 export async function getProductionLinePerformance() {
+  logger.info("Querying production line performance records");
   return findProductionLinePerformance();
 }
 
@@ -95,6 +101,7 @@ export async function getProductionLinePerformance() {
  * @returns {Promise<object[]>}
  */
 export async function getLotInspectionResults() {
+  logger.info("Querying inspection records");
   return findLotInspectionResults();
 }
 
@@ -104,6 +111,7 @@ export async function getLotInspectionResults() {
  * @returns {Promise<object[]>}
  */
 export async function getLotShippingStatus() {
+  logger.info("Querying shipping records");
   return findLotShippingStatus();
 }
 
@@ -113,6 +121,7 @@ export async function getLotShippingStatus() {
  * @returns {Promise<object[]>}
  */
 export async function getLotLifecycle() {
+  logger.info("Querying lifecycle records");
   return findLotLifecycle();
 }
 
@@ -127,6 +136,14 @@ export async function getLotLifecycle() {
  */
 export async function getLotLifecycleByFilters(filters) {
   const validatedFilters = validateLifecycleFilters(filters);
+  logger.info("Operations analytics query started", {
+    lot_id: validatedFilters.lotId,
+    query_date_range: {
+      startDate: validatedFilters.startDate,
+      endDate: validatedFilters.endDate,
+    },
+  });
+
   return findLotLifecycleByFilters(validatedFilters);
 }
 
@@ -185,40 +202,124 @@ export async function getProductionEfficiencyByShift() {
  * Space Complexity: O(total response payload).
  */
 export async function getDashboardBundle(options = {}) {
-  const topDefectsLimit = options.topDefectsLimit ?? 5;
-
-  const [
-    lotsSummary,
-    linePerformance,
-    inspections,
-    shipping,
-    lifecycle,
-    topDefects,
-    holds,
-    shiftEfficiency,
-  ] = await Promise.all([
-    getLotProductionSummary(),
-    getProductionLinePerformance(),
-    getLotInspectionResults(),
-    getLotShippingStatus(),
-    getLotLifecycleByFilters({
-      lotId: options.lotId,
+  logger.info("Operations analytics dashboard query started", {
+    lot_id: options.lotId,
+    query_date_range: {
       startDate: options.startDate,
       endDate: options.endDate,
-    }),
-    getTopLotsByDefects(topDefectsLimit),
-    getLotsOnShippingHold(),
-    getProductionEfficiencyByShift(),
-  ]);
+    },
+  });
 
-  return {
-    lotsSummary,
-    linePerformance,
-    inspections,
-    shipping,
-    lifecycle,
-    topDefects,
-    holds,
-    shiftEfficiency,
-  };
+  const topDefectsLimit = options.topDefectsLimit ?? 5;
+
+  try {
+    const [
+      lotsSummary,
+      linePerformance,
+      inspections,
+      shipping,
+      lifecycle,
+      topDefects,
+      holds,
+      shiftEfficiency,
+    ] = await Promise.all([
+      getLotProductionSummary(),
+      getProductionLinePerformance(),
+      getLotInspectionResults(),
+      getLotShippingStatus(),
+      getLotLifecycleByFilters({
+        lotId: options.lotId,
+        startDate: options.startDate,
+        endDate: options.endDate,
+      }),
+      getTopLotsByDefects(topDefectsLimit),
+      getLotsOnShippingHold(),
+      getProductionEfficiencyByShift(),
+    ]);
+
+    logger.info("Combining records from multiple data sources", {
+      lot_id: options.lotId,
+      query_date_range: {
+        startDate: options.startDate,
+        endDate: options.endDate,
+      },
+      number_of_production_records: lotsSummary.length,
+      number_of_inspection_records: inspections.length,
+      number_of_shipping_records: shipping.length,
+    });
+
+    const incompleteCount = lifecycle.filter(
+      (record) =>
+        record.production_data_missing ||
+        record.inspection_data_missing ||
+        record.shipping_data_missing,
+    ).length;
+
+    if (incompleteCount > 0) {
+      logger.warn(
+        "Incomplete records detected for operations analytics query",
+        {
+          lot_id: options.lotId,
+          query_date_range: {
+            startDate: options.startDate,
+            endDate: options.endDate,
+          },
+          incomplete_record_count: incompleteCount,
+        },
+      );
+    }
+
+    const hasLargeResult = [
+      lotsSummary.length,
+      inspections.length,
+      shipping.length,
+      lifecycle.length,
+    ].some((count) => count > LARGE_RESULT_THRESHOLD);
+
+    if (hasLargeResult) {
+      logger.warn("Unusually large query result returned", {
+        lot_id: options.lotId,
+        query_date_range: {
+          startDate: options.startDate,
+          endDate: options.endDate,
+        },
+        number_of_production_records: lotsSummary.length,
+        number_of_inspection_records: inspections.length,
+        number_of_shipping_records: shipping.length,
+        lifecycle_records: lifecycle.length,
+      });
+    }
+
+    logger.info("Operations analytics dashboard query completed", {
+      lot_id: options.lotId,
+      query_date_range: {
+        startDate: options.startDate,
+        endDate: options.endDate,
+      },
+      number_of_production_records: lotsSummary.length,
+      number_of_inspection_records: inspections.length,
+      number_of_shipping_records: shipping.length,
+    });
+
+    return {
+      lotsSummary,
+      linePerformance,
+      inspections,
+      shipping,
+      lifecycle,
+      topDefects,
+      holds,
+      shiftEfficiency,
+    };
+  } catch (error) {
+    logger.error("Unexpected exception when retrieving records", {
+      lot_id: options.lotId,
+      query_date_range: {
+        startDate: options.startDate,
+        endDate: options.endDate,
+      },
+      error_message: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 }

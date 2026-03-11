@@ -7,6 +7,9 @@
  * - Every function uses parameterized queries when user input is involved.
  */
 import { query } from "../config/db.js";
+import { getLogger } from "../logging/logger.js";
+
+const logger = getLogger("repositories/reportRepository");
 
 /**
  * Builds SQL and parameter list for lifecycle query with optional filters.
@@ -76,6 +79,7 @@ export function buildLifecycleQuery(filters = {}) {
  * Space Complexity: O(k) where k is number of grouped lots in result.
  */
 export async function findLotProductionSummary() {
+  logger.info("Querying production records");
   const result = await query(
     `
     SELECT
@@ -93,6 +97,10 @@ export async function findLotProductionSummary() {
     ORDER BY l.production_date;
     `,
   );
+
+  logger.info("Production records query completed", {
+    number_of_production_records: result.rows.length,
+  });
 
   return result.rows;
 }
@@ -153,6 +161,7 @@ export async function findProductionLinePerformance() {
  * Space Complexity: O(r) where r is returned row count.
  */
 export async function findLotInspectionResults() {
+  logger.info("Querying inspection records");
   const result = await query(
     `
     SELECT
@@ -168,6 +177,10 @@ export async function findLotInspectionResults() {
     `,
   );
 
+  logger.info("Inspection records query completed", {
+    number_of_inspection_records: result.rows.length,
+  });
+
   return result.rows;
 }
 
@@ -180,6 +193,7 @@ export async function findLotInspectionResults() {
  * Space Complexity: O(r) where r is returned row count.
  */
 export async function findLotShippingStatus() {
+  logger.info("Querying shipping records");
   const result = await query(
     `
     SELECT
@@ -197,6 +211,10 @@ export async function findLotShippingStatus() {
     `,
   );
 
+  logger.info("Shipping records query completed", {
+    number_of_shipping_records: result.rows.length,
+  });
+
   return result.rows;
 }
 
@@ -209,8 +227,17 @@ export async function findLotShippingStatus() {
  * Space Complexity: O(r) where r is returned row count.
  */
 export async function findLotLifecycle() {
+  logger.info("Querying lifecycle records", {
+    lot_id: undefined,
+    query_date_range: { startDate: undefined, endDate: undefined },
+  });
+
   const lifecycleQuery = buildLifecycleQuery();
   const result = await query(lifecycleQuery.text, lifecycleQuery.params);
+
+  logger.info("Lifecycle records query completed", {
+    number_of_records: result.rows.length,
+  });
 
   return result.rows;
 }
@@ -225,8 +252,25 @@ export async function findLotLifecycle() {
  * Space Complexity: O(r) where r is returned row count.
  */
 export async function findLotLifecycleByFilters(filters) {
+  logger.info("Querying lifecycle records", {
+    lot_id: filters.lotId,
+    query_date_range: {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    },
+  });
+
   const lifecycleQuery = buildLifecycleQuery(filters);
   const result = await query(lifecycleQuery.text, lifecycleQuery.params);
+
+  logger.info("Lifecycle records query completed", {
+    lot_id: filters.lotId,
+    query_date_range: {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    },
+    number_of_records: result.rows.length,
+  });
 
   return result.rows;
 }
