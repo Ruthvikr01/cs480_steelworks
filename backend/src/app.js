@@ -8,6 +8,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import * as Sentry from "@sentry/node";
 import { apiRouter } from "./routes/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandlers.js";
 import { getLogger } from "./logging/logger.js";
@@ -45,6 +46,16 @@ export function createApp() {
   app.get("/", (_req, res) => {
     res.json({
       message: "Operations Analytics scaffold backend is running.",
+    });
+  });
+
+  app.get("/sentry-test", async (_req, res) => {
+    const sentryTestError = new Error("Intentional Sentry test error endpoint");
+    Sentry.captureException(sentryTestError);
+    await Sentry.flush(2000);
+
+    res.status(202).json({
+      message: "Sentry test event submitted.",
     });
   });
 
