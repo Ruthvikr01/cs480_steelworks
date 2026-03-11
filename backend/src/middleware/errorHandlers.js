@@ -2,6 +2,9 @@
  * Module: middleware/errorHandlers.js
  * Responsibility: Handles not-found routes and centralized API error responses.
  */
+import { getLogger } from "../logging/logger.js";
+
+const logger = getLogger("middleware/errorHandlers");
 
 /**
  * Handles unknown API endpoints.
@@ -34,6 +37,11 @@ export function notFoundHandler(_req, res) {
  */
 export function errorHandler(error, _req, res, _next) {
   const statusCode = error.statusCode ?? 500;
+
+  logger.error("Unexpected exception when retrieving records", {
+    status_code: statusCode,
+    error_message: error.message ?? "Unexpected server error.",
+  });
 
   res.status(statusCode).json({
     error: statusCode === 500 ? "InternalServerError" : "RequestError",

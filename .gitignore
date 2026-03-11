@@ -1,3 +1,5 @@
 node_modules/
 .env
 .env.test
+backend/logs/
+test-results/

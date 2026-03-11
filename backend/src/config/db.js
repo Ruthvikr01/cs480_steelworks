@@ -10,6 +10,7 @@ import { Pool } from "pg";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { getLogger } from "../logging/logger.js";
 
 const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -23,6 +24,8 @@ const envFilePath = path.join(
 );
 
 dotenv.config({ path: envFilePath });
+
+const logger = getLogger("config/db");
 
 const useSsl = String(process.env.DB_SSL ?? "false").toLowerCase() === "true";
 
@@ -52,7 +55,15 @@ const pool = new Pool({
  */
 export async function query(text, params = []) {
   // Parameterized execution helps prevent SQL injection.
-  return pool.query(text, params);
+  try {
+    return await pool.query(text, params);
+  } catch (error) {
+    logger.error("Database query failure", {
+      error_message: error instanceof Error ? error.message : String(error),
+      parameter_count: params.length,
+    });
+    throw error;
+  }
 }
 
 /**

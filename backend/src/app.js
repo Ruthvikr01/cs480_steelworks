@@ -10,6 +10,9 @@ import cors from "cors";
 import helmet from "helmet";
 import { apiRouter } from "./routes/index.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandlers.js";
+import { getLogger } from "./logging/logger.js";
+
+const logger = getLogger("app");
 
 /**
  * Creates and configures the Express application.
@@ -43,6 +46,31 @@ export function createApp() {
     res.json({
       message: "Operations Analytics scaffold backend is running.",
     });
+  });
+
+  app.use("/api", (req, res, next) => {
+    const requestStart = Date.now();
+
+    logger.info("Operations analytics API request received", {
+      method: req.method,
+      path: req.originalUrl,
+      lot_id: req.query?.lotId,
+      query_date_range: {
+        startDate: req.query?.startDate,
+        endDate: req.query?.endDate,
+      },
+    });
+
+    res.on("finish", () => {
+      logger.info("Operations analytics API request completed", {
+        method: req.method,
+        path: req.originalUrl,
+        status_code: res.statusCode,
+        duration_ms: Date.now() - requestStart,
+      });
+    });
+
+    next();
   });
 
   // Mounts all API routes under /api.
