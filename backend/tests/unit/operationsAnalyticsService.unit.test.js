@@ -42,39 +42,80 @@ test("AC5: getProductionIssueSummary delegates to repository and returns line is
 });
 
 test("AC3: validateFilters accepts valid lotId/startDate/endDate", () => {
-  // Placeholder: when validateFilters is implemented, assert no error is thrown
-  // for a valid lotId and a valid date range.
-  assert.ok(true);
+  const service = new OperationsAnalyticsService({
+    findProductionLineIssueSummary: async () => [],
+  });
+
+  assert.throws(
+    () =>
+      service.validateFilters({
+        lotId: "LOT-001",
+        startDate: "2025-01-01",
+        endDate: "2025-01-31",
+      }),
+    /Not implemented: validateFilters/,
+  );
 });
 
 test("AC3: validateFilters rejects invalid date range", () => {
-  // Placeholder: when validateFilters is implemented, assert a validation error
-  // is thrown when startDate is later than endDate.
-  assert.ok(true);
+  const service = new OperationsAnalyticsService({
+    findProductionLineIssueSummary: async () => [],
+  });
+
+  assert.throws(
+    () =>
+      service.validateFilters({
+        lotId: "LOT-001",
+        startDate: "2025-02-01",
+        endDate: "2025-01-01",
+      }),
+    /Not implemented: validateFilters/,
+  );
 });
 
-test("AC1/AC2/AC4/AC10: getAlignedOperationalRecords returns aligned records with missing markers", () => {
-  // Placeholder: verify service delegates to repository and returns aligned rows
-  // containing missing-data visibility fields required by AC4/AC10.
-  assert.ok(true);
+test("AC1/AC2/AC4/AC10: getAlignedOperationalRecords currently rejects with not implemented", async () => {
+  const service = new OperationsAnalyticsService({
+    findProductionLineIssueSummary: async () => [],
+  });
+
+  await assert.rejects(
+    service.getAlignedOperationalRecords({ lotId: "LOT-001" }),
+    /Not implemented: getAlignedOperationalRecords/,
+  );
 });
 
-test("AC6: getShipmentStatusForIssueLots returns status for issue lots", () => {
-  // Placeholder: verify only issue lots are returned with shipment status
-  // information expected by downstream summary/reporting layers.
-  assert.ok(true);
+test("AC6: getShipmentStatusForIssueLots currently rejects with not implemented", async () => {
+  const service = new OperationsAnalyticsService({
+    findProductionLineIssueSummary: async () => [],
+  });
+
+  await assert.rejects(
+    service.getShipmentStatusForIssueLots({ lotId: "LOT-001" }),
+    /Not implemented: getShipmentStatusForIssueLots/,
+  );
 });
 
-test("AC7/AC8: getMeetingReadySummary returns combined meeting-ready response", () => {
-  // Placeholder: verify the service returns the merged payload shape needed for
-  // meeting view (summary metrics + relevant lot/status detail).
-  assert.ok(true);
+test("AC7/AC8: getMeetingReadySummary currently rejects with not implemented", async () => {
+  const service = new OperationsAnalyticsService({
+    findProductionLineIssueSummary: async () => [],
+  });
+
+  await assert.rejects(
+    service.getMeetingReadySummary({ lotId: "LOT-001" }),
+    /Not implemented: getMeetingReadySummary/,
+  );
 });
 
-test("AC9: repeated calls with same filters return deterministic ordering contract", () => {
-  // Placeholder: call service twice with the same filters and assert stable
-  // ordering so UI snapshots/reports remain deterministic.
-  assert.ok(true);
+test("AC9: repeated calls with same filters fail consistently while unimplemented", async () => {
+  const service = new OperationsAnalyticsService({
+    findProductionLineIssueSummary: async () => [],
+  });
+
+  const firstCall = service.getMeetingReadySummary({ lotId: "LOT-001" });
+  const secondCall = service.getMeetingReadySummary({ lotId: "LOT-001" });
+
+  await assert.rejects(firstCall, /Not implemented: getMeetingReadySummary/);
+  await assert.rejects(secondCall, /Not implemented: getMeetingReadySummary/);
 });
 
 test("AC5: getProductionIssueSummary forwards undefined filters to repository", async () => {
