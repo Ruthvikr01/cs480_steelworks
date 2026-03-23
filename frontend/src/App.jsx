@@ -146,6 +146,7 @@ export default function App() {
     <main className="container">
       <header>
         <h1>Operations Analytics Dashboard</h1>
+         <h2>CD TEST</h2>
         <p>Read-only reporting UI backed by PostgreSQL analytics queries.</p>
 
         <section className="filters" aria-label="Dashboard filters">
