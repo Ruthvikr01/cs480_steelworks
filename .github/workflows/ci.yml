@@ -75,11 +75,11 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git fetch --no-tags --depth=1 origin ${{ github.base_ref }}
             DIFF_RANGE="origin/${{ github.base_ref }}...HEAD"
+            npx lint-staged --diff="$DIFF_RANGE"
           else
-            DIFF_RANGE="${{ github.event.before }}...${{ github.sha }}"
+            echo "Skipping lint-staged on push events (staged-file checks are enforced on PRs)."
           fi
 
-          npx lint-staged --diff="$DIFF_RANGE"
           npm test
 
       # ------------------------------------------------------
