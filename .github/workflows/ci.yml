@@ -11,6 +11,9 @@ on:
     # - reopened            -> closed PR reopened
     # - ready_for_review    -> draft PR marked ready
     types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches:
+      - main
 
 
 # ------------------------------------------------------------
@@ -69,8 +72,14 @@ jobs:
       # ------------------------------------------------------
       - name: Run pre-commit checks
         run: |
-          git fetch --no-tags --depth=1 origin ${{ github.base_ref }}
-          npx lint-staged --diff="origin/${{ github.base_ref }}...HEAD"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin ${{ github.base_ref }}
+            DIFF_RANGE="origin/${{ github.base_ref }}...HEAD"
+          else
+            DIFF_RANGE="${{ github.event.before }}...${{ github.sha }}"
+          fi
+
+          npx lint-staged --diff="$DIFF_RANGE"
           npm test
 
       # ------------------------------------------------------
@@ -78,3 +87,12 @@ jobs:
       # ------------------------------------------------------
       - name: Ensure no auto-fix changes remain
         run: git diff --exit-code
+      
+      # ------------------------------------------------------
+      # Step 6: Build Docker images (verify Dockerfiles)
+      # ------------------------------------------------------
+      - name: Build Backend Docker image
+        run: docker build -t backend-ci ./backend
+
+      - name: Build Frontend Docker image
+        run: docker build -t frontend-ci ./frontend
